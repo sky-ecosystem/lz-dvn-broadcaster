@@ -30,8 +30,8 @@ interface IDVNReplica {
 ///           - **CCIP slot**: verifier = the CCIPBroadcaster. The broadcaster
 ///             receives a CCIP delivery, validates the source peer, then
 ///             broadcasts `verify()` to each registered replica.
-///           - **Msig slot**: verifier = a Gnosis Safe. The Safe batches N
-///             `verify()` calls (one per replica) into a single signed
+///           - **Multisig slot**: verifier = a Gnosis Safe. The Safe batches
+///             N `verify()` calls (one per replica) into a single signed
 ///             transaction. Off-chain, the Safe signers validate the
 ///             source-chain authenticity of the packet before signing.
 ///

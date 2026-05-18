@@ -27,10 +27,10 @@ struct Any2EVMMessage {
 ///         this contract validates the source identity, decodes the LZ packet,
 ///         and broadcasts `verify()` to N DVNReplica contracts.
 ///
-///         The broadcaster has no source-side role. On Ethereum, a vanilla
-///         `CCIPDVNAdapter` (unmodified upstream LZ contract) is the actual
-///         DVN listed in the OApp's send UlnConfig. That adapter is configured
-///         to send CCIP messages to this broadcaster as its destination peer.
+///         The broadcaster has no source-side role. On Ethereum, a stock
+///         upstream-unmodified `CCIPDVNAdapter` is the actual DVN listed in
+///         the OApp's send UlnConfig. That adapter is configured to send CCIP
+///         messages to this broadcaster as its destination peer.
 ///
 ///         Fully immutable: router, srcPeer, and the replicas list are all set
 ///         once at construction and never change. To rotate any of them,
@@ -57,7 +57,7 @@ contract CCIPBroadcaster {
     /// @notice The DVNReplica contracts to broadcast attestations to.
     ///         Set once at construction; never modified.
     /// @dev    Dynamic arrays cannot use the Solidity `immutable` keyword, but
-    ///         no setter exists for this array — it is effectively immutable.
+    ///         no setter exists for this array, so it is effectively immutable.
     ///         The auto-generated public getter `replicas(uint256 i)` returns
     ///         a single element by index; pair with `replicaCount()` to
     ///         iterate from off-chain callers.
