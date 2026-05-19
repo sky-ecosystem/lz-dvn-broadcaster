@@ -6,13 +6,12 @@ attestation paths, any two of which suffice to deliver.
 
 ## The three wings
 
-1. **CCIP wing**: attestation relayed via Chainlink CCIP. `CCIPBroadcaster`
-   on L2 receives the CCIP message and dispatches `verify()` to N
-   `DVNReplica` instances.
-2. **Multisig wing**: a Sky-controlled Gnosis Safe. Signers validate the
-   source packet off-chain, then batch-call `verify()` on N `DVNReplica`
-   instances in one signed tx.
-3. **LZ-aligned DVN wing**: a quorum across LZ-aligned DVNs (e.g.
+1. **CCIP**: attestation relayed via Chainlink CCIP. The L2
+   `CCIPDVNAdapter`'s `ccipReceive` reaches `DVNBroadcaster.verify(...)`
+   via the LayerZero receiveLibs redirect (see below).
+2. **Multisig**: a Sky-controlled Gnosis Safe whose signers validate
+   the source packet off-chain, then call `DVNBroadcaster.verify(...)`.
+3. **LZ-aligned DVNs**: a quorum across LZ-aligned DVNs (e.g.
    LZ Labs, Nethermind, Horizen, Deutsche Telekom, Canary, Luganodes, P2P)
    listed in the OApp's `UlnConfig`.
 
@@ -40,6 +39,24 @@ DVNs, threshold 8):
 
 Any single wing alone (4, 4, or 7) falls short of 8.
 
+## The receiveLibs redirect
+
+LayerZero's `CCIPDVNAdapter` is used on both L1 and L2 unmodified.
+It encodes the destination `receiveLib` from `receiveLibs[sendLib][dstEid]`
+into each outbound CCIP message. On the destination, the inherited
+`_decodeAndVerify` extracts that address from the payload and calls
+`IReceiveUln(addr).verify(...)` on it.
+
+By setting `receiveLibs[L1_sendLib][L2_eid]` on L1 to the CCIP
+broadcaster's address, that broadcaster receives the CCIP-attested
+`verify(...)` call instead of the L2 receive lib. Its replicas then call
+the actual L2 receive lib under their own identities.
+
+The `receiveLibs` mapping is only consumed by source-side `assignJob` in
+`DVNAdapterBase` / `CCIPDVNAdapter`; on the receive side the decoded
+address is used directly as the `verify(...)` call target with no
+validation, so this redirect requires no fork of the adapter.
+
 ## UlnConfig
 
 Asymmetric: replicas only appear on the recv side.
@@ -54,8 +71,9 @@ optionalDVNCount:     8
 optionalDVNThreshold: 1
 ```
 
-The `CCIPDVNAdapter`'s `dstConfig.peer` for the L2 EID is set to the
-`CCIPBroadcaster` address.
+The `CCIPDVNAdapter`'s `dstConfig.peer` for the L2 EID is set to the L2
+`CCIPDVNAdapter` address. `receiveLibs[L1_sendLib][L2_eid]` is set to the
+CCIP `DVNBroadcaster` address on L2.
 
 **L2 recv-side** (`GovernanceOAppReceiver` from L1 EID):
 
@@ -64,8 +82,8 @@ requiredDVNs:         []
 requiredDVNCount:     255 (NIL)
 optionalDVNs:         [
     7 LZ-aligned DVNs on L2,
-    4 CCIP replicas (verifier = CCIPBroadcaster),
-    4 multisig replicas (verifier = Gnosis Safe)
+    4 CCIP `DVNReplica`s,
+    4 multisig `DVNReplica`s
 ]
 optionalDVNCount:     15
 optionalDVNThreshold: 8
