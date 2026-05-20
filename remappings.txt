@@ -1,3 +1,1 @@
 forge-std/=lib/forge-std/src/
-@layerzerolabs/lz-evm-messagelib-v2/=lib/LayerZero-v2/packages/layerzero-v2/evm/messagelib/
-@layerzerolabs/lz-evm-protocol-v2/=lib/LayerZero-v2/packages/layerzero-v2/evm/protocol/

@@ -68,7 +68,7 @@ requiredDVNs:         []
 requiredDVNCount:     255 (NIL)
 optionalDVNs:         [7 LZ-aligned DVNs on Eth, CCIPDVNAdapter]
 optionalDVNCount:     8
-optionalDVNThreshold: 1
+optionalDVNThreshold: 8   # must match recv-side; LZ-aligned DVNs refuse to attest otherwise
 ```
 
 The `CCIPDVNAdapter`'s `dstConfig.peer` for the L2 EID is set to the L2
