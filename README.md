@@ -11,9 +11,8 @@ attestation paths, any two of which suffice to deliver.
    via the LayerZero receiveLibs redirect (see below).
 2. **Multisig**: a Sky-controlled Gnosis Safe whose signers validate
    the source packet off-chain, then call `DVNBroadcaster.verify(...)`.
-3. **LZ-aligned DVNs**: a quorum across LZ-aligned DVNs (e.g.
-   LZ Labs, Nethermind, Horizen, Deutsche Telekom, Canary, Luganodes, P2P)
-   listed in the OApp's `UlnConfig`.
+3. **LZ-aligned DVNs**: a quorum across LZ-aligned DVN providers (e.g.
+   LZ Labs, Nethermind, Horizen, Deutsche Telekom, Canary, Luganodes, P2P).
 
 Each wing contributes DVN addresses ("slots") to the OApp's optional set,
 weighted so any two wings together meet the threshold but no single wing
@@ -38,6 +37,16 @@ DVNs, threshold 8):
 | Multisig + 4-of-7 DVNs | 0    | 4        | 4          | 8     |
 
 Any single wing alone (4, 4, or 7) falls short of 8.
+
+## Broadcaster + replicas
+
+The CCIP and multisig wings each use a `DVNBroadcaster` that controls N
+`DVNReplica` contracts. The N replica addresses sit in the OApp's recv-side
+optional set; a single attestation by the wing's authorized source (the L2
+`CCIPDVNAdapter` for CCIP; a Sky-controlled Safe for multisig) fans out so
+each replica attests, yielding the wing's N slots toward the quorum. The
+LZ-aligned wing's slots are independent third-party DVN addresses listed
+directly.
 
 ## The receiveLibs redirect
 
