@@ -255,7 +255,7 @@ contract MigrateDVNs is Script {
 
     // ---------- UlnConfig builders ----------
 
-    /// Send-side: 7 LZ-aligned + 1 L1 CCIPDVNAdapter, threshold 1.
+    /// Send-side: 7 LZ-aligned + 1 L1 CCIPDVNAdapter, threshold 8 (matches recv-side).
     function _buildL1SendCfg() internal view returns (UlnConfig memory cfg) {
         address[] memory opt = new address[](8);
         for (uint256 i = 0; i < 7; ++i) opt[i] = eth.dvns[i];
@@ -266,7 +266,7 @@ contract MigrateDVNs is Script {
             confirmations:        CONFIRMATIONS,
             requiredDVNCount:     NIL_DVN_COUNT,
             optionalDVNCount:     8,
-            optionalDVNThreshold: 1,
+            optionalDVNThreshold: 8,
             requiredDVNs:         new address[](0),
             optionalDVNs:         opt
         });
