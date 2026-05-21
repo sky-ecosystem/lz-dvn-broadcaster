@@ -1,87 +1,71 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.22;
+pragma solidity ^0.8.24;
 
-import { Test, Vm } from "forge-std/Test.sol";
+import { Test } from "forge-std/Test.sol";
 import { DVNBroadcaster } from "../src/DVNBroadcaster.sol";
-import { DVNReplica } from "../src/DVNReplica.sol";
 
-contract MockReceiveUln {
-    bytes32 public lastPacketHash;
-    bytes32 public lastPayloadHash;
-    uint64  public lastConfirmations;
-    address public lastCaller;
-
-    function verify(bytes calldata packetHeader, bytes32 payloadHash, uint64 confirmations) external {
-        lastPacketHash    = keccak256(packetHeader);
-        lastPayloadHash   = payloadHash;
-        lastConfirmations = confirmations;
-        lastCaller        = msg.sender;
-    }
+interface IReceiveUln {
+    function hashLookup(bytes32 headerHash, bytes32 payloadHash, address dvn)
+        external view returns (bool submitted, uint64 confirmations);
 }
 
 contract DVNBroadcasterTest is Test {
+    address constant BASE_RECVLIB = 0xc70AB6f32772f59fBfc23889Caf4Ba3376C84bAf;
+    uint32  constant BASE_EID     = 30184;
+    uint256 constant N            = 4;
+
     DVNBroadcaster broadcaster;
-    MockReceiveUln recvLib;
 
     address verifier = makeAddr("verifier");
-    address attacker = makeAddr("attacker");
-
-    uint256 constant N = 4;
 
     function setUp() public {
-        recvLib = new MockReceiveUln();
-        broadcaster = new DVNBroadcaster(address(recvLib), verifier, N);
+        vm.createSelectFork(getChain("base").rpcUrl);
+        broadcaster = new DVNBroadcaster(BASE_RECVLIB, verifier, N);
     }
 
     // ---------- constructor ----------
 
     function test_constructor_setsImmutables() public view {
-        assertEq(broadcaster.rcvLib(), address(recvLib));
+        assertEq(broadcaster.rcvLib(), BASE_RECVLIB);
         assertEq(broadcaster.verifier(), verifier);
         assertEq(broadcaster.getReplicas().length, N);
     }
 
     function test_constructor_spawnsReplicasWithBroadcasterAsVerifier() public view {
+        address[] memory rs = broadcaster.getReplicas();
         for (uint256 i = 0; i < N; ++i) {
-            DVNReplica r = broadcaster.replicas(i);
-            assertTrue(address(r).code.length > 0, "replica has no code");
-            assertEq(r.verifier(), address(broadcaster));
+            assertTrue(rs[i].code.length > 0, "replica has no code");
+            assertEq(broadcaster.replicas(i).verifier(), address(broadcaster));
         }
     }
 
     function test_constructor_eachReplicaIsDistinct() public view {
-        address r0 = address(broadcaster.replicas(0));
-        for (uint256 i = 1; i < N; ++i) {
-            assertTrue(address(broadcaster.replicas(i)) != r0);
+        address[] memory rs = broadcaster.getReplicas();
+        for (uint256 i = 0; i < rs.length; ++i) {
+            for (uint256 j = i + 1; j < rs.length; ++j) {
+                assertTrue(rs[i] != rs[j], "duplicate replica address");
+            }
         }
     }
 
-    function test_constructor_revertsOnZeroReplicas() public {
-        vm.expectRevert("DVNBroadcaster/zero-replicas");
-        new DVNBroadcaster(address(recvLib), verifier, 0);
+    function test_constructor_revertsOnZeroReplica() public {
+        vm.expectRevert("DVNBroadcaster/zero-replica");
+        new DVNBroadcaster(BASE_RECVLIB, verifier, 0);
     }
 
     function test_constructor_emitsSpawned() public {
-        vm.recordLogs();
-        DVNBroadcaster bc = new DVNBroadcaster(address(recvLib), verifier, N);
-
-        Vm.Log[] memory entries = vm.getRecordedLogs();
-        bytes32 sig = keccak256("Spawned(address,address,address[])");
-        bool found;
-        for (uint256 i = 0; i < entries.length; ++i) {
-            if (entries[i].emitter == address(bc) && entries[i].topics[0] == sig) {
-                assertEq(address(uint160(uint256(entries[i].topics[1]))), verifier);
-                (address rcv, address[] memory rs) = abi.decode(entries[i].data, (address, address[]));
-                assertEq(rcv, address(recvLib));
-                assertEq(rs.length, N);
-                for (uint256 j = 0; j < N; ++j) {
-                    assertEq(rs[j], bc.getReplicas()[j]);
-                }
-                found = true;
-                break;
-            }
+        // Predict the broadcaster's address and the addresses of the N replicas
+        // it will deploy. Contract nonce starts at 1, so the i-th replica is at
+        // computeCreateAddress(broadcaster, i + 1).
+        address predictedBroadcaster = vm.computeCreateAddress(address(this), vm.getNonce(address(this)));
+        address[] memory expected = new address[](N);
+        for (uint256 i = 0; i < N; ++i) {
+            expected[i] = vm.computeCreateAddress(predictedBroadcaster, i + 1);
         }
-        assertTrue(found, "Spawned event not found");
+
+        vm.expectEmit(true, false, false, true, predictedBroadcaster);
+        emit DVNBroadcaster.Spawned(verifier, BASE_RECVLIB, expected);
+        new DVNBroadcaster(BASE_RECVLIB, verifier, N);
     }
 
     function test_getReplicas_matchesIndexedAccess() public view {
@@ -95,22 +79,51 @@ contract DVNBroadcasterTest is Test {
     // ---------- verify ----------
 
     function test_verify_rejectsUnauthorizedCaller() public {
-        vm.prank(attacker);
         vm.expectRevert("DVNBroadcaster/only-verifier");
-        broadcaster.verify(hex"01", keccak256("payload"), uint64(0));
+        broadcaster.verify("", bytes32(0), uint64(0));
     }
 
     function test_verify_dispatchesToAllReplicas() public {
-        bytes memory header = hex"01dead";
-        bytes32 hash = keccak256("payload");
+        bytes memory header = _buildHeader();
+        bytes32 payloadHash = keccak256("payload");
+
+        // Each replica must forward to the receive lib with the same args and
+        // MAX_CONFIRMATIONS, regardless of the confirmations passed in.
+        vm.expectCall(
+            BASE_RECVLIB,
+            abi.encodeWithSignature(
+                "verify(bytes,bytes32,uint64)", header, payloadHash, type(uint64).max
+            ),
+            uint64(N)
+        );
 
         vm.prank(verifier);
-        broadcaster.verify(header, hash, uint64(0));
+        broadcaster.verify(header, payloadHash, uint64(0));
 
-        // Mock keeps last-write semantics; the final replica's call wins.
-        assertEq(recvLib.lastCaller(), address(broadcaster.replicas(N - 1)));
-        assertEq(recvLib.lastPacketHash(), keccak256(header));
-        assertEq(recvLib.lastPayloadHash(), hash);
-        assertEq(recvLib.lastConfirmations(), type(uint64).max);
+        // Each replica should be recorded as an attester on-chain.
+        bytes32 headerHash = keccak256(header);
+        address[] memory replicas = broadcaster.getReplicas();
+        for (uint256 i = 0; i < N; ++i) {
+            (bool submitted, uint64 confirmations) =
+                IReceiveUln(BASE_RECVLIB).hashLookup(headerHash, payloadHash, replicas[i]);
+            assertTrue(submitted, "replica not recorded as attester");
+            assertEq(confirmations, type(uint64).max);
+        }
+    }
+
+    // ---------- helpers ----------
+
+    /// Build an 81-byte packet header that passes ReceiveUln302._assertHeader:
+    /// length 81, version 1, dstEid bytes (73..77) == localEid. Other fields
+    /// are free.
+    function _buildHeader() internal pure returns (bytes memory) {
+        return abi.encodePacked(
+            uint8(1),                                          // version
+            uint64(1),                                         // nonce
+            uint32(30101),                                     // srcEid (Eth)
+            bytes32(uint256(uint160(0xdead))),                 // sender
+            BASE_EID,                                          // dstEid (must match localEid)
+            bytes32(uint256(uint160(0xbeef)))                  // receiver
+        );
     }
 }

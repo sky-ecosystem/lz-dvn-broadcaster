@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-pragma solidity ^0.8.22;
+pragma solidity ^0.8.24;
 
 import { Script, console } from "forge-std/Script.sol";
 
@@ -159,8 +159,8 @@ contract MigrateDVNs is Script {
         deployerKey = vm.envUint("PRIVATE_KEY");
         deployer    = vm.addr(deployerKey);
 
-        ethFork  = vm.createFork(vm.envString("ETH_RPC_URL"));
-        baseFork = vm.createFork(vm.envString("BASE_RPC_URL"));
+        ethFork  = vm.createFork(getChain("mainnet").rpcUrl);
+        baseFork = vm.createFork(getChain("base").rpcUrl);
 
         extraOptions = abi.encodePacked(
             uint16(3),               // type 3

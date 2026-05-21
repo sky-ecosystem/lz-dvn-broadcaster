@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-pragma solidity ^0.8.22;
+pragma solidity ^0.8.24;
 
 import { Script, console } from "forge-std/Script.sol";
 
@@ -39,7 +39,8 @@ contract CounterIncrementSpell {
 ///   3. L1: wire send-side UlnConfig + Executor, set peer, transfer ownership to PauseProxy.
 ///   4. L2: wire recv-side UlnConfig, transfer ownership to L2GovernanceRelay.
 ///
-/// Reads: PRIVATE_KEY, ETH_RPC_URL, BASE_RPC_URL.
+/// Reads: PRIVATE_KEY. MAINNET_RPC_URL / BASE_RPC_URL override forge-std's
+///        default RPCs when set.
 /// Writes: deployments.json (addresses) at repo root via vm.writeJson.
 contract DeployGovBridgeOldDVNs is Script {
     uint32 internal constant CONFIG_TYPE_EXECUTOR = 1;
@@ -72,8 +73,8 @@ contract DeployGovBridgeOldDVNs is Script {
 
         // Create both forks once. vm.selectFork preserves in-memory state across
         // phase switches (deployed addresses, etc).
-        ethFork  = vm.createFork(vm.envString("ETH_RPC_URL"));
-        baseFork = vm.createFork(vm.envString("BASE_RPC_URL"));
+        ethFork  = vm.createFork(getChain("mainnet").rpcUrl);
+        baseFork = vm.createFork(getChain("base").rpcUrl);
     }
 
     function run() external {

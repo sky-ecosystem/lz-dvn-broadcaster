@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Aggregated interfaces inlined from LayerZero-v2 (protocol + oapp packages).
-pragma solidity ^0.8.20;
+pragma solidity >=0.8.0;
 
 // ------------------------ Messaging structs ------------------------
 

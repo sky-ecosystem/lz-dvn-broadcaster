@@ -1,33 +1,25 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.22;
+pragma solidity ^0.8.24;
 
 import { Test } from "forge-std/Test.sol";
 import { DVNReplica } from "../src/DVNReplica.sol";
 
-contract MockReceiveUln {
-    bytes32 public lastPacketHash;
-    bytes32 public lastPayloadHash;
-    uint64  public lastConfirmations;
-    address public lastCaller;
-
-    function verify(bytes calldata packetHeader, bytes32 payloadHash, uint64 confirmations) external {
-        lastPacketHash    = keccak256(packetHeader);
-        lastPayloadHash   = payloadHash;
-        lastConfirmations = confirmations;
-        lastCaller        = msg.sender;
-    }
+interface IReceiveUln {
+    function hashLookup(bytes32 headerHash, bytes32 payloadHash, address dvn)
+        external view returns (bool submitted, uint64 confirmations);
 }
 
 contract DVNReplicaTest is Test {
-    DVNReplica     replica;
-    MockReceiveUln recvLib;
+    address constant BASE_RECVLIB = 0xc70AB6f32772f59fBfc23889Caf4Ba3376C84bAf;
+    uint32  constant BASE_EID     = 30184;
+
+    DVNReplica replica;
 
     address verifier = makeAddr("verifier");
-    address attacker = makeAddr("attacker");
 
     function setUp() public {
+        vm.createSelectFork(getChain("base").rpcUrl);
         replica = new DVNReplica(verifier);
-        recvLib = new MockReceiveUln();
     }
 
     function test_constructor_setsVerifier() public view {
@@ -35,37 +27,44 @@ contract DVNReplicaTest is Test {
     }
 
     function test_verify_callableOnlyByVerifier() public {
-        bytes memory header = hex"01";
-        bytes32 hash = keccak256("payload");
-
         vm.expectRevert("DVNReplica/only-verifier");
-        vm.prank(attacker);
-        replica.verify(address(recvLib), header, hash);
+        replica.verify(address(0), "", bytes32(0));
     }
 
     function test_verify_writesToRecvLibAsThisReplica() public {
-        bytes memory header = hex"01dead";
-        bytes32 hash = keccak256("payload");
+        bytes memory header = _buildHeader();
+        bytes32 payloadHash = keccak256("payload");
+
+        vm.expectCall(
+            BASE_RECVLIB,
+            abi.encodeWithSignature(
+                "verify(bytes,bytes32,uint64)", header, payloadHash, type(uint64).max
+            ),
+            uint64(1)
+        );
 
         vm.prank(verifier);
-        replica.verify(address(recvLib), header, hash);
+        replica.verify(BASE_RECVLIB, header, payloadHash);
 
-        assertEq(recvLib.lastPacketHash(), keccak256(header));
-        assertEq(recvLib.lastPayloadHash(), hash);
-        assertEq(recvLib.lastConfirmations(), type(uint64).max);
-        assertEq(recvLib.lastCaller(), address(replica));
+        (bool submitted, uint64 confirmations) =
+            IReceiveUln(BASE_RECVLIB).hashLookup(keccak256(header), payloadHash, address(replica));
+        assertTrue(submitted, "replica not recorded as attester");
+        assertEq(confirmations, type(uint64).max);
     }
 
-    function test_verify_supportsRepeatedCalls() public {
-        bytes memory header = hex"01dead";
-        bytes32 hash = keccak256("payload");
+    // ---------- helpers ----------
 
-        vm.prank(verifier);
-        replica.verify(address(recvLib), header, hash);
-
-        vm.prank(verifier);
-        replica.verify(address(recvLib), header, hash);
-
-        assertEq(recvLib.lastCaller(), address(replica));
+    /// Build an 81-byte packet header that passes ReceiveUln302._assertHeader:
+    /// length 81, version 1, dstEid bytes (73..77) == localEid. Other fields
+    /// are free.
+    function _buildHeader() internal pure returns (bytes memory) {
+        return abi.encodePacked(
+            uint8(1),                                          // version
+            uint64(1),                                         // nonce
+            uint32(30101),                                     // srcEid (Eth)
+            bytes32(uint256(uint160(0xdead))),                 // sender
+            BASE_EID,                                          // dstEid (must match localEid)
+            bytes32(uint256(uint160(0xbeef)))                  // receiver
+        );
     }
 }

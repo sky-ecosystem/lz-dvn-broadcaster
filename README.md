@@ -19,10 +19,10 @@ Each wing contributes DVN addresses ("slots") to the OApp's optional set,
 weighted so any two wings together meet the threshold but no single wing
 does. For a parameter N ≥ 1:
 
-| Wing | Slots |
-|---|---|
-| CCIP | N |
-| Multisig | N |
+| Wing       | Slots  |
+| ---------- | ------ |
+| CCIP       | N      |
+| Multisig   | N      |
 | LZ-aligned | 2N − 1 |
 
 Threshold = 2N. Any pair of wings reaches 2N exactly; any single wing alone
@@ -31,11 +31,11 @@ contributes at most 2N − 1 and falls short.
 Concrete example for N = 4 (4 CCIP slots + 4 multisig slots + 7 LZ-aligned
 DVNs, threshold 8):
 
-| Combination | CCIP | Multisig | LZ-aligned | Total |
-|---|---|---|---|---|
-| CCIP + Multisig | 4 | 4 | 0 | 8 |
-| CCIP + 4-of-7 DVNs | 4 | 0 | 4 | 8 |
-| Multisig + 4-of-7 DVNs | 0 | 4 | 4 | 8 |
+| Combination            | CCIP | Multisig | LZ-aligned | Total |
+| ---------------------- | ---- | -------- | ---------- | ----- |
+| CCIP + Multisig        | 4    | 4        | 0          | 8     |
+| CCIP + 4-of-7 DVNs     | 4    | 0        | 4          | 8     |
+| Multisig + 4-of-7 DVNs | 0    | 4        | 4          | 8     |
 
 Any single wing alone (4, 4, or 7) falls short of 8.
 
@@ -68,7 +68,7 @@ requiredDVNs:         []
 requiredDVNCount:     255 (NIL)
 optionalDVNs:         [7 LZ-aligned DVNs on Eth, CCIPDVNAdapter]
 optionalDVNCount:     8
-optionalDVNThreshold: 8   # must match recv-side; LZ-aligned DVNs refuse to attest otherwise
+optionalDVNThreshold: 8   # must be > 1; LZ-aligned DVNs refuse to attest otherwise
 ```
 
 The `CCIPDVNAdapter`'s `dstConfig.peer` for the L2 EID is set to the L2

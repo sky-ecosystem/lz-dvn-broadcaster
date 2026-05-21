@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Sourced from https://metadata.layerzero-api.com/v1/metadata (LayerZero v2 deployments)
-pragma solidity ^0.8.22;
+pragma solidity ^0.8.24;
 
 library Addresses {
     struct LZ {

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.24;
 
 import { DVNReplica } from "./DVNReplica.sol";
 
@@ -11,7 +11,7 @@ contract DVNBroadcaster {
     DVNReplica[] public replicas;
 
     constructor(address _rcvLib, address _verifier, uint256 n) {
-        require(n > 0, "DVNBroadcaster/zero-replicas");
+        require(n > 0, "DVNBroadcaster/zero-replica");
         rcvLib   = _rcvLib;
         verifier = _verifier;
 

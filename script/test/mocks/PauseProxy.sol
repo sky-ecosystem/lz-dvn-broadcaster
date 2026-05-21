@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Minimal Sky/Maker DSPauseProxy analog: ward-gated delegatecall executor.
-pragma solidity ^0.8.22;
+pragma solidity ^0.8.24;
 
 contract PauseProxy {
     mapping(address => uint256) public wards;
