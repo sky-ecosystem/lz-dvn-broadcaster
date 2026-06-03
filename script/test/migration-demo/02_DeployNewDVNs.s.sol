@@ -58,7 +58,6 @@ contract DeployNewDVNs is Script {
     CCIPDVNAdapter              internal l1CcipAdapter;
 
     // L2
-    MinimalCCIPDVNAdapterFeeLib internal l2FeeLib;
     CCIPDVNAdapter              internal l2CcipAdapter;
     DVNBroadcaster              internal ccipBroadcaster;
     DVNBroadcaster              internal msigBroadcaster;
@@ -97,9 +96,7 @@ contract DeployNewDVNs is Script {
         vm.selectFork(baseFork);
         vm.startBroadcast(deployerKey);
 
-        l2FeeLib      = new MinimalCCIPDVNAdapterFeeLib();
         l2CcipAdapter = new CCIPDVNAdapter(admins, base.ccipRouter);
-        DVNAdapterBaseLike(address(l2CcipAdapter)).setWorkerFeeLib(address(l2FeeLib));
 
         // CCIP wing: broadcaster's verifier is the L2 CCIPDVNAdapter (reached
         // via receiveLibs redirect from L1).
@@ -123,7 +120,6 @@ contract DeployNewDVNs is Script {
 
         vm.stopBroadcast();
         console.log("[L2] CCIPDVNAdapter      ", address(l2CcipAdapter));
-        console.log("[L2] CCIP fee lib        ", address(l2FeeLib));
         console.log("[L2] CCIP DVNBroadcaster ", address(ccipBroadcaster));
         for (uint256 i = 0; i < ccipReplicas.length; ++i) {
             console.log("[L2]    ccip replica     ", ccipReplicas[i]);
@@ -190,7 +186,6 @@ contract DeployNewDVNs is Script {
         vm.serializeAddress(k, "l2CounterSpell",   keep[7]);
         vm.serializeAddress(k, "l1FeeLib",         address(l1FeeLib));
         vm.serializeAddress(k, "l1CcipAdapter",    address(l1CcipAdapter));
-        vm.serializeAddress(k, "l2FeeLib",         address(l2FeeLib));
         vm.serializeAddress(k, "l2CcipAdapter",    address(l2CcipAdapter));
         vm.serializeAddress(k, "ccipBroadcaster",  address(ccipBroadcaster));
         vm.serializeAddress(k, "ccipReplicas",     ccipReplicas);

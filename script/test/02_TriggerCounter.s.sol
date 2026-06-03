@@ -29,7 +29,7 @@ import { PauseProxy } from "./mocks/PauseProxy.sol";
 import { GovernanceOAppSender } from "./mocks/GovernanceOAppSender.sol";
 import { TxParams } from "./mocks/IGovernanceOAppSender.sol";
 import { L2GovernanceRelay } from "./mocks/L2GovernanceRelay.sol";
-import { CCIPDVNAdapter } from "./mocks/CCIPDVNAdapter.sol";
+import { CCIPDVNAdapter, ISendLibBase } from "./mocks/CCIPDVNAdapter.sol";
 
 interface IDVNBroadcaster {
     function verify(bytes calldata packetHeader, bytes32 payloadHash, uint64 confirmations) external;
@@ -225,7 +225,18 @@ contract TriggerCounter is Script {
 
         pauseProxy.exec{ value: fee.nativeFee }(address(l1Spell), l1SpellData);
 
-        // Recover everything left in the adapter (topup leftover + multiplier
+        // The SendLib credits the DVN fee to the adapter in its internal
+        // accounting. The adapter auto-pulls this credit on the next
+        // assignJob when its balance is insufficient, but we pull it
+        // explicitly here to recover the accumulated multiplier surplus
+        // back to the deployer at end of script.
+        uint256 credited = ISendLibBase(eth.sendUln302).fees(l1CcipAdapter);
+        if (credited > 0) {
+            CCIPDVNAdapter(l1CcipAdapter).withdrawFee(eth.sendUln302, l1CcipAdapter, credited);
+            console.log("[L1] Pulled credited DVN fee from SendLib (wei)", credited);
+        }
+
+        // Recover everything in the adapter (topup leftover + multiplier
         // profit). withdrawToken with token=0 sends native ETH.
         uint256 leftover = l1CcipAdapter.balance;
         if (leftover > 0) {

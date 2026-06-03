@@ -116,7 +116,6 @@ contract DeployGovBridge is Script {
     // L2
     GovernanceOAppReceiver       internal l2Receiver;
     L2GovernanceRelay            internal l2Relay;
-    MinimalCCIPDVNAdapterFeeLib  internal l2FeeLib;
     CCIPDVNAdapter               internal l2CcipAdapter;
     DVNBroadcaster               internal ccipBroadcaster;
     DVNBroadcaster               internal msigBroadcaster;
@@ -186,11 +185,9 @@ contract DeployGovBridge is Script {
         );
         l2Relay = new L2GovernanceRelay(eth.eid, address(l2Receiver), address(l1Relay));
 
-        l2FeeLib       = new MinimalCCIPDVNAdapterFeeLib();
         address[] memory admins = new address[](1);
         admins[0] = deployer;
         l2CcipAdapter = new CCIPDVNAdapter(admins, base.ccipRouter);
-        DVNAdapterBaseLike(address(l2CcipAdapter)).setWorkerFeeLib(address(l2FeeLib));
 
         ccipBroadcaster = new DVNBroadcaster(base.receiveUln302, address(l2CcipAdapter), N);
         ccipReplicas    = ccipBroadcaster.getReplicas();
@@ -216,7 +213,6 @@ contract DeployGovBridge is Script {
 
         console.log("[L2] GovernanceOAppReceiver ", address(l2Receiver));
         console.log("[L2] L2GovernanceRelay      ", address(l2Relay));
-        console.log("[L2] CCIP fee lib           ", address(l2FeeLib));
         console.log("[L2] CCIPDVNAdapter         ", address(l2CcipAdapter));
         console.log("[L2] CCIP DVNBroadcaster    ", address(ccipBroadcaster));
         for (uint256 i = 0; i < ccipReplicas.length; ++i) {
@@ -395,7 +391,6 @@ contract DeployGovBridge is Script {
         vm.serializeAddress(k, "l2CounterSpell",   address(l2CounterSpell));
         vm.serializeAddress(k, "l1FeeLib",         address(l1FeeLib));
         vm.serializeAddress(k, "l1CcipAdapter",    address(l1CcipAdapter));
-        vm.serializeAddress(k, "l2FeeLib",         address(l2FeeLib));
         vm.serializeAddress(k, "l2CcipAdapter",    address(l2CcipAdapter));
         vm.serializeAddress(k, "ccipBroadcaster",  address(ccipBroadcaster));
         vm.serializeAddress(k, "ccipReplicas",     ccipReplicas);
