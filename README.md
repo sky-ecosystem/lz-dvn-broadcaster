@@ -1,10 +1,16 @@
 # lz-gov-dvns
 
 Auxiliary verification contracts for the **Sky LZ governance bridge**. An
-L1 → L2 governance packet can be verified across three independent
-attestation paths, any two of which suffice to deliver.
+L1 → L2 governance packet is verified across multiple independent
+attestation paths ("wings"); a configurable quorum of them suffices to
+deliver. Examples of wings include Chainlink CCIP, Circle CCTP, a
+Sky-controlled multisig, or a quorum of LZ-aligned DVNs.
 
-## The three wings
+The rest of this document describes the specific configuration this
+repo deploys: three wings (Chainlink CCIP, a Sky-controlled multisig, and
+a quorum of LZ-aligned DVNs), with any two sufficient to deliver.
+
+## Wings
 
 1. **CCIP**: attestation relayed via Chainlink CCIP. The L2
    `CCIPDVNAdapter`'s `ccipReceive` reaches `DVNBroadcaster.verify(...)`
@@ -24,7 +30,7 @@ does. For a parameter N ≥ 1:
 | Multisig   | N      |
 | LZ-aligned | 2N − 1 |
 
-Threshold = 2N. Any pair of wings reaches 2N exactly; any single wing alone
+Threshold = 2N. Any pair of wings reaches at least 2N; any single wing alone
 contributes at most 2N − 1 and falls short.
 
 Concrete example for N = 4 (4 CCIP slots + 4 multisig slots + 7 LZ-aligned
