@@ -19,7 +19,7 @@ pragma solidity ^0.8.24;
 import { DVNReplica } from "./DVNReplica.sol";
 
 contract DVNBroadcaster {
-    event Spawned(address indexed verifier, address rcvLib, address[] replicas);
+    event Spawned(address indexed rcvLib, address indexed verifier, address[] replicas);
 
     address public immutable rcvLib;
     address public immutable verifier;
@@ -36,7 +36,7 @@ contract DVNBroadcaster {
             replicas.push(r);
             addrs[i] = address(r);
         }
-        emit Spawned(_verifier, _rcvLib, addrs);
+        emit Spawned(_rcvLib, _verifier, addrs);
     }
 
     function verify(bytes calldata packetHeader, bytes32 payloadHash, uint64) external {

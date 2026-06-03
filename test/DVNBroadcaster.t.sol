@@ -78,8 +78,8 @@ contract DVNBroadcasterTest is Test {
             expected[i] = vm.computeCreateAddress(predictedBroadcaster, i + 1);
         }
 
-        vm.expectEmit(true, false, false, true, predictedBroadcaster);
-        emit DVNBroadcaster.Spawned(verifier, BASE_RECVLIB, expected);
+        vm.expectEmit(true, true, false, true, predictedBroadcaster);
+        emit DVNBroadcaster.Spawned(BASE_RECVLIB, verifier, expected);
         new DVNBroadcaster(BASE_RECVLIB, verifier, N);
     }
 
