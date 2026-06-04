@@ -54,4 +54,8 @@ contract DVNBroadcaster {
             out[i] = address(replicas[i]);
         }
     }
+
+    function getReplicasCount() external view returns (uint256) {
+        return replicas.length;
+    }
 }

@@ -86,6 +86,7 @@ contract DVNBroadcasterTest is Test {
     function test_getReplicas_matchesIndexedAccess() public view {
         address[] memory rs = broadcaster.getReplicas();
         assertEq(rs.length, N);
+        assertEq(broadcaster.getReplicasCount(), N);
         for (uint256 i = 0; i < N; ++i) {
             assertEq(rs[i], address(broadcaster.replicas(i)));
         }
