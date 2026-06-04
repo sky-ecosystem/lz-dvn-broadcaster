@@ -1,14 +1,14 @@
-# lz-gov-dvns
+# lz-dvn-broadcaster
 
-Auxiliary verification contracts for the **Sky LZ governance bridge**. An
-L1 → L2 governance packet is verified across multiple independent
+`DVNBroadcaster` and `DVNReplica`: a LayerZero V2 building block that lets
+an OApp verify a cross-chain message across multiple independent
 attestation paths ("wings"); a configurable quorum of them suffices to
 deliver. Examples of wings include Chainlink CCIP, Circle CCTP, a
-Sky-controlled multisig, or a quorum of LZ-aligned DVNs.
+multisig, or a quorum of LZ-aligned DVNs.
 
-The rest of this document describes the specific configuration this
-repo deploys: three wings (Chainlink CCIP, a Sky-controlled multisig, and
-a quorum of LZ-aligned DVNs), with any two sufficient to deliver.
+The rest of this document describes a concrete example: the **Sky LZ
+governance bridge**, with three wings (Chainlink CCIP, a Sky-controlled
+multisig, and a quorum of LZ-aligned DVNs), any two sufficient to deliver.
 
 ## Wings
 
