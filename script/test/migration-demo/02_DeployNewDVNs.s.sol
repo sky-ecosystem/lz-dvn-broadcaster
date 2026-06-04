@@ -37,7 +37,7 @@ interface DVNAdapterBaseLike {
 /// L1: CCIPDVNAdapter + fee lib. Configures dstConfig (peer = L2 CCIPDVNAdapter)
 ///     and receiveLibs[sendLib][BASE_EID] = L2 CCIP broadcaster, both filled
 ///     in once the L2 addresses are known.
-/// L2: CCIPDVNAdapter + fee lib + CCIP DVNBroadcaster (verifier = L2
+/// L2: CCIPDVNAdapter + CCIP DVNBroadcaster (verifier = L2
 ///     CCIPDVNAdapter) + msig DVNBroadcaster (verifier = deployer). N=4
 ///     replicas per broadcaster.
 contract DeployNewDVNs is Script {

@@ -107,10 +107,8 @@ contract TriggerCounter is Script {
     uint256 internal ethFork;
     uint256 internal baseFork;
 
-    // CCIP DVN adapter doesn't keep ETH in steady state, but on the first send
-    // the SendLib forwards (totalFee) and the adapter spends (ccipFee); a small
-    // topup buffers any quote/execution timing skew. 0.001 ETH covers a
-    // mainnet→Base CCIP fee (~0.0001 ETH) with multiplier overhead ~5x over.
+    // Pre-funds the adapter so it can pay the CCIP fee. 0.001 ETH covers a
+    // mainnet→Base CCIP fee (~0.0001 ETH); leftover is swept back at the end.
     uint256 internal constant CCIP_TOPUP = 0.001 ether;
 
     // From deployments.json
@@ -217,27 +215,21 @@ contract TriggerCounter is Script {
 
         vm.startBroadcast(deployerKey);
 
-        // Topup the L1 CCIP DVN adapter so its `assignJob` can cover the CCIP
-        // fee. Atomic with the spell call so failure paths leave nothing stuck.
+        // Topup so `assignJob` can pay the CCIP fee.
         (bool topupOk,) = l1CcipAdapter.call{ value: CCIP_TOPUP }("");
         require(topupOk, "TriggerCounter/topup-failed");
         console.log("[L1] Topup to CCIPDVNAdapter (wei)", CCIP_TOPUP);
 
         pauseProxy.exec{ value: fee.nativeFee }(address(l1Spell), l1SpellData);
 
-        // The SendLib credits the DVN fee to the adapter in its internal
-        // accounting. The adapter auto-pulls this credit on the next
-        // assignJob when its balance is insufficient, but we pull it
-        // explicitly here to recover the accumulated multiplier surplus
-        // back to the deployer at end of script.
+        // Pull SendLib-credited DVN fee back so it can be swept to deployer.
         uint256 credited = ISendLibBase(eth.sendUln302).fees(l1CcipAdapter);
         if (credited > 0) {
             CCIPDVNAdapter(l1CcipAdapter).withdrawFee(eth.sendUln302, l1CcipAdapter, credited);
             console.log("[L1] Pulled credited DVN fee from SendLib (wei)", credited);
         }
 
-        // Recover everything in the adapter (topup leftover + multiplier
-        // profit). withdrawToken with token=0 sends native ETH.
+        // Sweep adapter balance back to deployer (token=0 → native ETH).
         uint256 leftover = l1CcipAdapter.balance;
         if (leftover > 0) {
             CCIPDVNAdapter(l1CcipAdapter).withdrawToken(address(0), deployer, leftover);

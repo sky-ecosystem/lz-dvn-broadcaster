@@ -119,10 +119,10 @@ contract L2DVNMigrationSpell {
 }
 
 /// Atomic migration spell, fired from L1 via the PauseProxy. In one tx:
-///   1. Updates L1 send-side UlnConfig (no change in this round, since the
-///      msig wing has no L1 representative; left in place for symmetry).
-///   2. Sends an L2 reconfig payload through the governance bridge that
-///      updates the L2 recv-side UlnConfig to 7 LZ + 4 msig replicas,
+///   1. Sends an L2 reconfig payload through the governance bridge that
+///      updates the L2 recv-side UlnConfig to 7 LZ + 4 CCIP + 4 msig
+///      replicas, threshold 8.
+///   2. Updates L1 send-side UlnConfig to 7 LZ + 1 L1 CCIPDVNAdapter,
 ///      threshold 8.
 ///
 /// L1 spell deployed inline here so its bytecode lives on-chain (matches the

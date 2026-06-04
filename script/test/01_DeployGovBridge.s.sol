@@ -75,7 +75,7 @@ contract CounterIncrementSpell {
 ///   1. L1: deploy PauseProxy, L1GovernanceRelay, GovernanceOAppSender,
 ///          MinimalCCIPDVNAdapterFeeLib, CCIPDVNAdapter.
 ///   2. L2: deploy GovernanceOAppReceiver, L2GovernanceRelay,
-///          MinimalCCIPDVNAdapterFeeLib, CCIPDVNAdapter, CCIP DVNBroadcaster
+///          CCIPDVNAdapter, CCIP DVNBroadcaster
 ///          (verifier = L2 CCIPDVNAdapter), msig DVNBroadcaster
 ///          (verifier = deployer), Counter, CounterIncrementSpell.
 ///   3. L1: wire send lib + Executor + UlnConfig (8 optional [7 LZ-aligned +
