@@ -43,7 +43,7 @@ contract DVNReplicaTest is Test {
 
     function test_verify_callableOnlyByVerifier() public {
         vm.expectRevert("DVNReplica/only-verifier");
-        replica.verify(address(0), "", bytes32(0));
+        replica.verify(address(0), "", bytes32(0), uint64(0));
     }
 
     function test_verify_writesToRecvLibAsThisReplica() public {
@@ -53,24 +53,24 @@ contract DVNReplicaTest is Test {
         vm.expectCall(
             BASE_RECVLIB,
             abi.encodeWithSignature(
-                "verify(bytes,bytes32,uint64)", header, payloadHash, type(uint64).max
+                "verify(bytes,bytes32,uint64)", header, payloadHash, uint64(123)
             ),
             uint64(1)
         );
 
         vm.prank(verifier);
-        replica.verify(BASE_RECVLIB, header, payloadHash);
+        replica.verify(BASE_RECVLIB, header, payloadHash, uint64(123));
 
         (bool submitted, uint64 confirmations) =
             IReceiveUln(BASE_RECVLIB).hashLookup(keccak256(header), payloadHash, address(replica));
         assertTrue(submitted, "replica not recorded as attester");
-        assertEq(confirmations, type(uint64).max);
+        assertEq(confirmations, 123);
     }
 
     // ---------- helpers ----------
 
     /// Build an 81-byte packet header that passes ReceiveUln302._assertHeader:
-    /// length 81, version 1, dstEid bytes (73..77) == localEid. Other fields
+    /// length 81, version 1, dstEid bytes (45..49) == localEid. Other fields
     /// are free.
     function _buildHeader() internal pure returns (bytes memory) {
         return abi.encodePacked(

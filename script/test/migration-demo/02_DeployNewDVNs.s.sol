@@ -100,11 +100,11 @@ contract DeployNewDVNs is Script {
 
         // CCIP wing: broadcaster's verifier is the L2 CCIPDVNAdapter (reached
         // via receiveLibs redirect from L1).
-        ccipBroadcaster = new DVNBroadcaster(base.receiveUln302, address(l2CcipAdapter), N);
+        ccipBroadcaster = new DVNBroadcaster(base.endpoint, address(l2CcipAdapter), N);
         ccipReplicas    = ccipBroadcaster.getReplicas();
 
         // Msig wing: broadcaster's verifier is the deployer (acting as the Safe).
-        msigBroadcaster = new DVNBroadcaster(base.receiveUln302, deployer, N);
+        msigBroadcaster = new DVNBroadcaster(base.endpoint, deployer, N);
         msigReplicas    = msigBroadcaster.getReplicas();
 
         // L2 CCIPDVNAdapter peer = L1 CCIPDVNAdapter (now known).

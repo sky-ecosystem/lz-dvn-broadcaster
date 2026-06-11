@@ -189,10 +189,10 @@ contract DeployGovBridge is Script {
         admins[0] = deployer;
         l2CcipAdapter = new CCIPDVNAdapter(admins, base.ccipRouter);
 
-        ccipBroadcaster = new DVNBroadcaster(base.receiveUln302, address(l2CcipAdapter), N);
+        ccipBroadcaster = new DVNBroadcaster(base.endpoint, address(l2CcipAdapter), N);
         ccipReplicas    = ccipBroadcaster.getReplicas();
 
-        msigBroadcaster = new DVNBroadcaster(base.receiveUln302, deployer, N);
+        msigBroadcaster = new DVNBroadcaster(base.endpoint, deployer, N);
         msigReplicas    = msigBroadcaster.getReplicas();
 
         l2Counter      = new Counter();
