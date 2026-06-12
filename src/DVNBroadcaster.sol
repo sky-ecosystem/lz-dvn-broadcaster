@@ -19,8 +19,7 @@ pragma solidity ^0.8.24;
 import { DVNReplica } from "./DVNReplica.sol";
 
 interface IEndpoint {
-    function getReceiveLibrary(address receiver, uint32 srcEid)
-        external view returns (address lib);
+    function getReceiveLibrary(address receiver, uint32 srcEid) external view returns (address lib, bool isDefault);
 }
 
 contract DVNBroadcaster {
@@ -60,7 +59,7 @@ contract DVNBroadcaster {
         uint32  srcEid   = uint32(bytes4(packetHeader[9:13]));
         address receiver = address(bytes20(packetHeader[61:81]));
 
-        address rcvLib = IEndpoint(endpoint).getReceiveLibrary(receiver, srcEid);
+        (address rcvLib,) = IEndpoint(endpoint).getReceiveLibrary(receiver, srcEid);
 
         uint256 len = replicas.length;
         for (uint256 i = 0; i < len; ++i) {

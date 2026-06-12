@@ -107,3 +107,5 @@ optionalDVNThreshold: 8
 ## Design scope
 
 This broadcaster-replica design is scoped to governance bridging and may not be suitable for other contexts such as token bridging. In particular, the timeout receive library is not supported.
+
+The OApp's receive library is expected to be set explicitly.
