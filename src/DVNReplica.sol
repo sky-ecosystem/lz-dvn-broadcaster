@@ -25,11 +25,6 @@ interface IReceiveUln {
 }
 
 contract DVNReplica {
-    // The actual wait for source-chain confirmations happens upstream of
-    // the replica (CCIP waits for finality before delivery; multisig
-    // signers wait off-chain).
-    uint64 internal constant MAX_CONFIRMATIONS = type(uint64).max;
-
     address public immutable verifier;
 
     constructor(address _verifier) {
@@ -39,9 +34,10 @@ contract DVNReplica {
     function verify(
         address receiveLib,
         bytes calldata packetHeader,
-        bytes32 payloadHash
+        bytes32 payloadHash,
+        uint64 confirmations
     ) external {
         require(msg.sender == verifier, "DVNReplica/only-verifier");
-        IReceiveUln(receiveLib).verify(packetHeader, payloadHash, MAX_CONFIRMATIONS);
+        IReceiveUln(receiveLib).verify(packetHeader, payloadHash, confirmations);
     }
 }

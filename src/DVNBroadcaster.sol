@@ -18,16 +18,20 @@ pragma solidity ^0.8.24;
 
 import { DVNReplica } from "./DVNReplica.sol";
 
-contract DVNBroadcaster {
-    event Spawned(address indexed rcvLib, address indexed verifier, address[] replicas);
+interface IEndpoint {
+    function getReceiveLibrary(address receiver, uint32 srcEid) external view returns (address lib, bool isDefault);
+}
 
-    address public immutable rcvLib;
+contract DVNBroadcaster {
+    event Spawned(address indexed verifier, address[] replicas);
+
+    address public immutable endpoint;
     address public immutable verifier;
     DVNReplica[] public replicas;
 
-    constructor(address _rcvLib, address _verifier, uint256 n) {
+    constructor(address _endpoint, address _verifier, uint256 n) {
         require(n > 0, "DVNBroadcaster/zero-replica");
-        rcvLib   = _rcvLib;
+        endpoint = _endpoint;
         verifier = _verifier;
 
         address[] memory addrs = new address[](n);
@@ -36,14 +40,30 @@ contract DVNBroadcaster {
             replicas.push(r);
             addrs[i] = address(r);
         }
-        emit Spawned(_rcvLib, _verifier, addrs);
+        emit Spawned(_verifier, addrs);
     }
 
-    function verify(bytes calldata packetHeader, bytes32 payloadHash, uint64) external {
+    // Note: `confirmations` is chosen by the verifier per its upstream finality
+    // model (e.g., `type(uint64).max` for CCIP, operator-defined for multisig).
+    function verify(bytes calldata packetHeader, bytes32 payloadHash, uint64 confirmations) external {
         require(msg.sender == verifier, "DVNBroadcaster/only-verifier");
+
+        // LZ V2 packet header layout (PacketV1Codec, 81 bytes):
+        //   [0]      uint8   version
+        //   [1:9]    uint64  nonce
+        //   [9:13]   uint32  srcEid
+        //   [13:45]  bytes32 sender
+        //   [45:49]  uint32  dstEid
+        //   [49:81]  bytes32 receiver  (address in the trailing 20 bytes)
+        require(uint8(packetHeader[0]) == 1, "DVNBroadcaster/bad-header-version");
+        uint32  srcEid   = uint32(bytes4(packetHeader[9:13]));
+        address receiver = address(bytes20(packetHeader[61:81]));
+
+        (address rcvLib,) = IEndpoint(endpoint).getReceiveLibrary(receiver, srcEid);
+
         uint256 len = replicas.length;
         for (uint256 i = 0; i < len; ++i) {
-            replicas[i].verify(rcvLib, packetHeader, payloadHash);
+            replicas[i].verify(rcvLib, packetHeader, payloadHash, confirmations);
         }
     }
 
