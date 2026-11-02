@@ -109,3 +109,14 @@ optionalDVNThreshold: 8
 This broadcaster-replica design is scoped to governance bridging and may not be suitable for other contexts such as token bridging. In particular, the timeout receive library is not supported.
 
 The OApp's receive library is expected to be set explicitly.
+
+## Audits
+
+Audit reports are hosted on the auditors' public portfolio pages:
+
+| Auditor | Report | Date |
+| --- | --- | --- |
+| ChainSecurity | [Sky LayerZero Governance DVN](https://www.chainsecurity.com/security-audit/sky-layerzero-governance-dvn/) | 2026-06-23 |
+| Cantina | [Sky: LZ DVN Broadcaster](https://cantina.xyz/portfolio/7cd8d933-3bc0-4215-b223-cd617febc1cc) | 2026-05-28 |
+
+ChainSecurity reports are cumulative: each portfolio page hosts the latest version of the report, which covers all previously reviewed versions.
